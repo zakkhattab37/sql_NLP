@@ -122,7 +122,7 @@ print_diagnosis_results :-
 % print_results(+List, +Rank)
 % -----------------------------------------------------------------------------
 print_results([], _).
-print_results([diag(Disease, Conf, Match, Total, Desc, Advice)|Rest], Rank) :-
+print_results([diag(Disease, Conf, Match, Total, Desc, Advice, Prevention, Cure)|Rest], Rank) :-
     confidence_label(Conf, Label),
     urgency_marker(Disease, Marker),
     format("  ~`═t~50|~n"),
@@ -132,6 +132,8 @@ print_results([diag(Disease, Conf, Match, Total, Desc, Advice)|Rest], Rank) :-
     format("  Assessment : ~w~n", [Label]),
     format("  About      : ~w~n", [Desc]),
     format("  Advice     : ~w~n", [Advice]),
+    format("  Prevention : ~w~n", [Prevention]),
+    format("  Cure       : ~w~n", [Cure]),
     nl,
     NextRank is Rank + 1,
     print_results(Rest, NextRank).
@@ -188,6 +190,8 @@ list_symptoms :-
 run_with_symptoms(SymptomList) :-
     reset_session,
     forall(member(S, SymptomList), assert_symptom(S)),
+    findall(AllS, symptom(AllS), AllSymptoms),
+    forall(member(SItem, AllSymptoms), ( \+ member(SItem, SymptomList) -> deny_symptom(SItem) ; true )),
     check_urgency,
     ranked_diagnoses(Results),
     ( Results = [] ->
@@ -200,17 +204,12 @@ run_with_symptoms(SymptomList) :-
 %  Returns a JSON-formatted string for use by external systems (Node.js bridge).
 %  Usage: get_diagnosis_json([fever, cough], JSON).
 get_diagnosis_json(SymptomList, JsonString) :-
-    engine:reset_session,
-    % Assert confirmed symptoms
-    forall(member(S, SymptomList), engine:assert_symptom(S)),
-    % Deny ALL other known symptoms so has/1 never falls through to ask/1
-    findall(All, knowledge_base:symptom(All), AllSymptoms),
-    forall(
-        (member(S2, AllSymptoms), \+ member(S2, SymptomList)),
-        engine:deny_symptom(S2)
-    ),
-    rules:check_urgency,
-    rules:ranked_diagnoses(Results),
+    reset_session,
+    forall(member(S, SymptomList), assert_symptom(S)),
+    findall(AllS, symptom(AllS), AllSymptoms),
+    forall(member(SItem, AllSymptoms), ( \+ member(SItem, SymptomList) -> deny_symptom(SItem) ; true )),
+    check_urgency,
+    ranked_diagnoses(Results),
     results_to_json(Results, JsonString).
 
 results_to_json([], '{"diagnoses":[]}') :- !.
@@ -219,9 +218,9 @@ results_to_json(Results, Json) :-
     atomic_list_concat(Parts, ',', Inner),
     atomic_list_concat(['{"diagnoses":[', Inner, ']}'], Json).
 
-diag_to_json_obj(diag(D, Conf, Match, Total, Desc, Advice), Obj) :-
-    ( rules:urgent_flag(D) -> Urgent = true ; Urgent = false ),
-    rules:confidence_label(Conf, Label),
+diag_to_json_obj(diag(D, Conf, Match, Total, Desc, Advice, Prevention, Cure), Obj) :-
+    ( current_predicate(urgent_flag/1), urgent_flag(D) -> Urgent = true ; Urgent = false ),
+    confidence_label(Conf, Label),
     atomic_list_concat([
         '{"disease":"', D, '",',
         '"confidence":', Conf, ',',
@@ -230,6 +229,8 @@ diag_to_json_obj(diag(D, Conf, Match, Total, Desc, Advice), Obj) :-
         '"label":"', Label, '",',
         '"urgent":', Urgent, ',',
         '"description":"', Desc, '",',
+        '"prevention":"', Prevention, '",',
+        '"cure":"', Cure, '",',
         '"advice":"', Advice, '"}'
     ], Obj).
 

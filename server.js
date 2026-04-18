@@ -117,7 +117,11 @@ app.get('/symptoms', async (req, res) => {
     { id: 'chills',              label: 'Chills or shivering' },
     { id: 'night_sweats',        label: 'Night sweats' },
     { id: 'frequent_urination',  label: 'Frequent urination' },
-    { id: 'blurred_vision',      label: 'Blurred or impaired vision' }
+    { id: 'blurred_vision',      label: 'Blurred or impaired vision' },
+    { id: 'wheezing',            label: 'Wheezing' },
+    { id: 'pale_skin',           label: 'Pale skin' },
+    { id: 'dizziness',           label: 'Dizziness or lightheadedness' },
+    { id: 'sensitivity_to_light',label: 'Sensitivity to light' }
   ];
   res.json({ symptoms });
 });
@@ -136,7 +140,10 @@ app.get('/diseases', (_req, res) => {
     { id: 'dengue_fever',    label: 'Dengue Fever' },
     { id: 'malaria',         label: 'Malaria' },
     { id: 'diabetes',        label: 'Diabetes (Type 2)' },
-    { id: 'tuberculosis',    label: 'Tuberculosis (TB)' }
+    { id: 'tuberculosis',    label: 'Tuberculosis (TB)' },
+    { id: 'asthma',          label: 'Asthma' },
+    { id: 'migraine',        label: 'Migraine' },
+    { id: 'anemia',          label: 'Anemia' }
   ];
   res.json({ diseases });
 });

@@ -8,7 +8,8 @@
     disease_score/3,
     all_disease_scores/1,
     ranked_diagnoses/1,
-    confidence_label/2
+    confidence_label/2,
+    check_urgency/0
 ]).
 
 :- use_module(knowledge_base).
@@ -75,9 +76,11 @@ above_threshold(score(_, Match, Total, _)) :-
     Ratio is Match / Total,
     Ratio >= 0.30.                          % at least 30% symptom overlap
 
-to_diagnosis(score(Disease, Match, Total, Conf), diag(Disease, Conf, Match, Total, Desc, Advice)) :-
+to_diagnosis(score(Disease, Match, Total, Conf), diag(Disease, Conf, Match, Total, Desc, Advice, Prevention, Cure)) :-
     disease_description(Disease, Desc),
-    disease_advice(Disease, Advice).
+    disease_advice(Disease, Advice),
+    ( disease_prevention(Disease, Prevention) -> true ; Prevention = 'No specific prevention data.' ),
+    ( disease_cure(Disease, Cure) -> true ; Cure = 'No specific cure data.' ).
 
 % -----------------------------------------------------------------------------
 % confidence_label(+Confidence, -Label)
